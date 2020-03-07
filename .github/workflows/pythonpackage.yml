@@ -38,5 +38,3 @@ jobs:
       run: |
         pip install pytest
         pytest
-    - name: Coverage check
-      uses: devmasx/coverage-check-action@v1.1.0
