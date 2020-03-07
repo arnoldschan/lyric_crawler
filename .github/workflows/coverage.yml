@@ -23,13 +23,12 @@ jobs:
     - uses: actions/checkout@v2
     - name: Coverage check
       uses: devmasx/coverage-check-action@v1.1.0
-      with: lcov
-        # lcov | simplecov
+      with: 
         type: lcov # default is lcov
         # Github token for create checks
         token: World # default is World
         # Minimum coverage
-        min_coverage: 80# optional, default is 80
+        min_coverage: 80 # optional, default is 80
         # Json with coverage result
         result_path: .cov.json
  
