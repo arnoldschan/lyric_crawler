@@ -1,0 +1,35 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: linting
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: autopep8
+      uses: peter-evans/autopep8@v1
+      with:
+        args: --recursive --in-place --aggressive --aggressive .
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: autopep8 action fixes
+        committer: Peter Evans <peter-evans@users.noreply.github.com>
+        title: Fixes by autopep8 action
+        body: This is an auto-generated PR with fixes by autopep8.
+        labels: autopep8, automated pr
+        reviewers: peter-evans
+        branch: autopep8-patches
