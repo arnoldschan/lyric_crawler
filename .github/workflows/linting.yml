@@ -27,9 +27,9 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: autopep8 action fixes
-        committer: Peter Evans <peter-evans@users.noreply.github.com>
+        committer: Arnold Samuel Chan <arnoldsamuelc@gmail.com>
         title: Fixes by autopep8 action
         body: This is an auto-generated PR with fixes by autopep8.
         labels: autopep8, automated pr
-        reviewers: peter-evans
+        reviewers: arnold-samuel-chan
         branch: autopep8-patches
