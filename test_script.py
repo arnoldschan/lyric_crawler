@@ -1,10 +1,10 @@
-from crawlers.crawler_detik import CrawlerDetik
-def detik_crawler_post():
-    crawler = CrawlerDetik('http://www.detik.com').get_post()
-    status = False
-    if crawler.get == 200:
-      status = True
-    assert status
+from crawlers.lyric_crawler import LyricCrawler
+def lyric_crawler():
+    artist = 'Ed Sheeran'
+    song_title = 'Thinking Out Loud'
+    song_spotify_link = "https://open.spotify.com/track/0sf12qNH5qcw8qpgymFOqD"
+    lc = LyricCrawler(artist,song_title).run()
+    assert lc.status
     
 def test_placeholder():
   pass
