@@ -14,12 +14,15 @@ from crawlers.util.db import ORMBaseClass, engine
 # ORMBaseClass.metadata.drop_all(bind=engine)
 # ORMBaseClass.metadata.create_all(bind=engine)
 class LyricCrawler(CrawlerBase):
-    def __init__(self,artist_obj,song_obj):
-        self.artist_obj = artist_obj
-        self.song_obj = song_obj
-        self.artist_name = self.artist_obj.name
-        self.song_title = self.song_obj.title
-        self.session = db_session()
+    def __init__(self,artist_name,song_title):
+        self.artist_name = artist_name
+        self.song_title = song_title
+        self.album = None
+        self.writer = None
+        self.distributor = None
+        self.label = None
+        self.lyric = None
+        self.release_date = None
         super().__init__(self.lyric_url)
 
     @property
@@ -61,62 +64,97 @@ class LyricCrawler(CrawlerBase):
             if response.status_code != 200:
                 raise "URL NOT FOUND"
 
-    def crawl(self):
+    def run(self):
         self.get_soup()
         paragraph = self.soup.find('div',class_="lyrics").find('p')
         [ads.extract() for ads in paragraph.find_all('defer-compile')];
-        lyric = paragraph.text.strip().replace('\u2005',' ')
-        album= self.soup.find(text="Album").parent.nextSibling.nextSibling.text.strip()
-
-        new_lyric = Lyric(self.song_obj.id,lyric)
-        new_album = Album(album)
-        new_album.song_id = self.song_obj.id
-        new_album.artist_id = self.artist_obj.id
-
-        self.session.merge(new_lyric)
-        self.session.merge(new_album)
+        self.lyric = paragraph.text.strip().replace('\u2005',' ')
+        self.album= self.soup.find(text="Album").parent.nextSibling.nextSibling.text.strip()
         
         content_info = self.soup.find('div',{"initial-content-for":"track_info"})
-        written_soup = content_info.find(text="Written By")
-        if written_soup is not None:
-            writers = written_soup.parent.nextSibling.nextSibling.text.strip()
+        writer_soup = content_info.find(text="Written By")
+        if writer_soup is not None:
+            writers = writer_soup.parent.nextSibling.nextSibling.text.strip()
+            self.writer = []
             for writer in writers.replace('&',',').split(","):
-                new_writer = Writer(writer.strip())
-                new_writer = self.session.merge(new_writer)
-                self.commit()
-                new_songwriter_map = SongWriterMap(self.song_obj.id,new_writer.id)
-                self.session.merge(new_songwriter_map)
-            self.commit()
+                self.writer.append(writer)
         else:
             print(f'writer not found for: {self.artist_name}-{self.song_title}')
         
         distributor_soup = content_info.find(text="Distributor")
         if distributor_soup is not None:
-            distributor = distributor_soup.parent.nextSibling.nextSibling.text.strip()
-            new_distributor = Distributor(distributor)
-            new_distributor = self.session.merge(new_distributor)
-            self.commit()
-            self.song_obj.distributor_id = new_distributor.id
+            self.distributor = distributor_soup.parent.nextSibling.nextSibling.text.strip()
         else:
             print(f'distributor not found for: {self.artist_name}-{self.song_title}')
         
         label_soup = content_info.find(text="Label")
         if label_soup is not None:
-            label = label_soup.parent.nextSibling.nextSibling.text.strip()
-            new_label = Label(label)
-            new_label = self.session.merge(new_label)
-            self.commit()
-            self.song_obj.label_id = new_label.id
+            self.label = label_soup.parent.nextSibling.nextSibling.text.strip()
         else:
             print(f'label not found for: {self.artist_name}-{self.song_title}')
         
         release_date_soup = content_info.find(text="Release Date")
         if release_date_soup is not None:
-            release_date = dateparser.parse(release_date_soup.parent.nextSibling.nextSibling.text.strip())
-            self.song_obj.release_date = release_date
+            self.release_date = dateparser.parse(release_date_soup.parent.nextSibling.nextSibling.text.strip())
+            # self.song_obj.release_date = release_date
         else:
             print(f'release date not found for: {self.artist_name}-{self.song_title}')
-        self.commit()
+        # self.commit()
+        self.result = {"artist_name": self.artist_name,
+                "song_title": self.song_title,
+                "album": self.album,
+                "writer": self.writer,
+                "distributor": self.distributor,
+                "label": self.label,
+                "lyric": self.lyric,
+                "release_date": self.release_date
+                }
+        self.status = True
+        return self
 
-    def commit(self):
-        self._commit(self.session)
+    def to_db(self,song_obj, artist_obj, db_session):
+        self.session = db_session
+        # write lyric
+        new_lyric = Lyric(song_obj.id,self.lyric)
+        self.session.merge(new_lyric)
+
+        # write album
+        new_album = Album(self.album)
+        new_album.song_id = song_obj.id
+        new_album.artist_id = artist_obj.id
+        self.session.merge(new_album)
+
+        # write writer
+        if isinstance(self.writer, str):
+            self.writer = list(self.writer)
+        if isinstance(self.writer, list):
+            for writer in self.writer:
+                new_writer = Writer(writer)
+                new_writer = self.session.merge(new_writer)
+                self.session.commit()
+                new_songwriter_map = SongWriterMap(song_obj.id,new_writer.id)
+                self.session.merge(new_songwriter_map)
+
+        # distributor
+        if self.distributor is not None:
+            new_distributor = Distributor(self.distributor)
+            new_distributor = self.session.merge(new_distributor)
+            self.session.commit()
+        
+
+        # label
+        if self.label is not None:
+            new_label = Label(self.label)
+            new_label = self.session.merge(new_label)
+            self.session.commit()
+
+        # add attribute in song obj
+        if self.label is not None:
+            song_obj.label_id = new_label.id
+        if self.distributor is not None:
+            song_obj.distributor_id = new_distributor.id
+        song_obj.release_date = self.release_date
+        self.session.commit()
+
+    # def commit(self):
+    #     self._commit(self.session)
