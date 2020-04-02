@@ -22,22 +22,21 @@ class Song(ORMBaseClass):
     distributor_id = Column(Integer(),ForeignKey('distributor.id'))
     label_id = Column(Integer(),ForeignKey('label.id'))
     release_date = Column(DateTime())
-    spotify_link = Column(String(255), unique=True)
-    def __init__(self,title,spotify_link):
+    spotify_uid = Column(String(255), unique=True)
+    def __init__(self,spotify_uid):
         self.id = None
         self.artist_id = None
-        self.title = title
-        self.spotify_link = spotify_link
+        self.title = None
+        self.spotify_uid = spotify_uid
         self.distributor_id = None
         self.label_id = None
         self.release_date = None
-
 class Chart(ORMBaseClass):
     __tablename__ = "chart"
     __table_args__ = {'extend_existing': True}
     record_id = Column(Integer(), primary_key=True)
-    rank = Column(Integer(), primary_key=True)
-    date = Column(DateTime(), primary_key=True)
+    rank = Column(Integer())
+    date = Column(DateTime())
     song_id = Column(Integer(), ForeignKey("song.id"))
     stream = Column(Integer())
     def __init__(self):
