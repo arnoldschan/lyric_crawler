@@ -31,18 +31,19 @@ def run():
                     Song.artist_id == Artist.id
                 ).all()
 
-        with open('fail_links.txt','r+') as file:
-            for query in songs_without_lyrics:
-                print(query.artist_name)
-                print(query.Song.title)
-                lc = LyricCrawler(query.artist_name,query.Song.title)
-                try:
-                    result = lc.run()
-                    result.to_db(query.Song)
-                except Exception as e:
-                    file.write(lc.lyric_url+'\n')
-                    print(f"Fail crawl lyric: {query.Song.id}: {e}")
-                time.sleep(3)
+        # with open('fail_links.txt','r+') as file:
+        for query in songs_without_lyrics:
+            print(query.artist_name)
+            print(query.Song.title)
+            lc = LyricCrawler(query.artist_name,query.Song.title)
+            try:
+                result = lc.run()
+                result.to_db(query.Song)
+            except Exception as e:
+                # file.write(lc.lyric_url+'\n')
+                print(lc.url)
+                print(f"Fail crawl lyric: {query.Song.id}: {e}")
+            time.sleep(3)
         
 #%%
 
