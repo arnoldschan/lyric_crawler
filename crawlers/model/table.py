@@ -37,7 +37,7 @@ class Chart(ORMBaseClass):
     record_id = Column(Integer(), primary_key=True)
     rank = Column(Integer())
     date = Column(DateTime())
-    song_id = Column(Integer(), ForeignKey("song.id"))
+    song_id = Column(Integer())
     stream = Column(Integer())
     def __init__(self):
         self.record_id = None

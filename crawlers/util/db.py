@@ -8,10 +8,10 @@ from sqlalchemy.ext.declarative import declarative_base
 import os
 
 
-MYSQL_USER = "root" #os.environ['MYSQL_USER']
-MYSQL_PASSWORD = "lndata42840667" #os.environ['MYSQL_PASSWORD']
-MYSQL_URL = "localhost" #os.environ['MYSQL_URL']
-MYSQL_DB_NAME = "songs"#os.environ['MYSQL_DB_NAME']
+MYSQL_USER = os.environ['MYSQL_USER']
+MYSQL_PASSWORD = os.environ['MYSQL_PASSWORD']
+MYSQL_URL = os.environ['MYSQL_URL']
+MYSQL_DB_NAME = os.environ['MYSQL_DB_NAME']
 
 engine = create_engine(
     f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_URL}/{MYSQL_DB_NAME}',

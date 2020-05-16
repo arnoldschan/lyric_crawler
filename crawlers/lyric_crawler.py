@@ -98,8 +98,9 @@ class LyricCrawler(CrawlerBase):
                 html = self.get()
                 if html.status_code != 200:
                     print("FALLBACK NOT FOUND")
-                self.url = json.loads(html.text)['response']['sections'][0]['hits'][0]['result']['url']
-                return True
+                for hits in json.loads(html.text)['response']['sections'][0]['hits']:
+                    if hits['type'] == 'song':
+                        self.url = hits['result']['url']
             except Exception as e:
                 return False
             print(f"crawling to this link {self.url}")
