@@ -1,4 +1,4 @@
-#%%
+# %%
 from __future__ import absolute_import
 from crawlers.model.crawler import CrawlerBase
 from crawlers.model.table import (
@@ -9,38 +9,41 @@ import pandas as pd
 from io import StringIO
 from datetime import datetime as dt, timedelta as td
 from sqlalchemy.exc import IntegrityError
-#%%
+# %%
 from collections import UserList
 # ORMBaseClass.metadata.drop_all(bind=engine)
 db.ORMBaseClass.metadata.create_all(bind=db.engine)
-#%%
+# %%
+
 
 class SpotifyCrawler(CrawlerBase):
-    def __init__(self,date='latest'):
+    def __init__(self, date='latest'):
         self.date = date
         self.session = db.db_session()
         super().__init__(self.spotify_url)
-        self.result = SpotifyResult(self.session,self.date)
+        self.result = SpotifyResult(self.session, self.date)
         # https://spotifycharts.com/regional/global/daily/2020-03-18/download
-    
+
     @property
     def spotify_url(self):
         time_start_string = None
         if self.date == 'latest':
-            date = self.session.query(Chart.date).order_by(Chart.date.desc()).first()
-            if date is None :
-                new_date = dt(year=2017,month=1,day=1)
+            date = self.session.query(
+                Chart.date).order_by(
+                Chart.date.desc()).first()
+            if date is None:
+                new_date = dt(year=2017, month=1, day=1)
             else:
                 new_date = date.date
                 new_date += td(days=1)
-            time_start_string = dt.strftime(new_date,format="%Y-%m-%d")
+            time_start_string = dt.strftime(new_date, format="%Y-%m-%d")
         else:
             time_start_string = self.date
         self.date = new_date
         url = f"https://spotifycharts.com/regional/global/daily/{time_start_string}/download"
         print(f"crawling {time_start_string}")
         return url
-        
+
     def run(self):
         html = self.get()
         # session=db_session()
@@ -49,25 +52,28 @@ class SpotifyCrawler(CrawlerBase):
             return self.result
         for row in html.text.split("\n")[2:]:
             attribute = row.split(',')
-            if len(attribute)==5:
+            if len(attribute) == 5:
                 this_song = {
                     'rank': int(attribute[0]),
-                    'title': attribute[1].strip().replace('"',''),
-                    'artist': attribute[2].strip().replace('"',''),
+                    'title': attribute[1].strip().replace('"', ''),
+                    'artist': attribute[2].strip().replace('"', ''),
                     'stream': int(attribute[3]),
                     'spotify_uid': attribute[4][31:]
                 }
                 self.result.append(this_song)
 
         return self.result
-#%%
+# %%
+
+
 class SpotifyResult(UserList):
-    def __init__(self,session,date):
+    def __init__(self, session, date):
         self.session = session
         self.date = date
         super().__init__()
+
     def to_db(self):
-        to_save =  []
+        to_save = []
         for song in self.data:
             if song is None:
                 new_chart = Chart()
@@ -79,10 +85,10 @@ class SpotifyResult(UserList):
                 self.session.commit()
                 return True
             # new_artist = self.merge(Artist(song['artist']),name = song['artist'])
-            new_artist = self.get_create(Artist,name = song['artist'])
+            new_artist = self.get_create(Artist, name=song['artist'])
 
             # new_song = Song(song['spotify_uid'])
-            new_song = self.get_create(Song,spotify_uid = song['spotify_uid'])
+            new_song = self.get_create(Song, spotify_uid=song['spotify_uid'])
             new_song.artist_id = new_artist.id
             new_song.title = song['title']
             # self.merge(new_song,spotify_uid = song['spotify_uid'])
@@ -94,9 +100,10 @@ class SpotifyResult(UserList):
             self.session.merge(new_chart)
         self.session.commit()
         return True
-    def get_create(self,model,**kwargs):
-        return db.get_or_create_object(self.session, model,**kwargs)
-#%%
+
+    def get_create(self, model, **kwargs):
+        return db.get_or_create_object(self.session, model, **kwargs)
+# %%
 
 
 if __name__ == "__main__":

@@ -17,11 +17,15 @@ engine = create_engine(
     f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_URL}/{MYSQL_DB_NAME}',
     encoding="utf-8",
     echo=False,
-    poolclass=NullPool
-)
+    poolclass=NullPool)
 ORMBaseClass = declarative_base()
 
-db_session = scoped_session(sessionmaker(autocommit=False, autoflush=True, bind=engine))
+db_session = scoped_session(
+    sessionmaker(
+        autocommit=False,
+        autoflush=True,
+        bind=engine))
+
 
 def get_or_create_object(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
