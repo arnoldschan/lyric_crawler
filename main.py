@@ -1,4 +1,4 @@
-#%%
+# %%
 from __future__ import absolute_import
 from crawlers.lyric_crawler import LyricCrawler
 from crawlers.util.db import ORMBaseClass, engine, db_session
@@ -11,7 +11,8 @@ from sqlalchemy.sql import exists
 # ORMBaseClass.metadata.drop_all(bind=engine)
 import time
 ORMBaseClass.metadata.create_all(bind=engine)
-#%%
+# %%
+
 
 def run():
     next_day_exists = True
@@ -24,18 +25,18 @@ def run():
             Song,
             Artist.name.label('artist_name'),
             Artist.id.label('artist_id')
-            ).filter(
-                ~ exists().where(Song.id==Lyric.song_id)
-                ).join(
-                    Artist,
-                    Song.artist_id == Artist.id
-                ).all()
+        ).filter(
+            ~ exists().where(Song.id == Lyric.song_id)
+        ).join(
+            Artist,
+            Song.artist_id == Artist.id
+        ).all()
 
         # with open('fail_links.txt','r+') as file:
         for query in songs_without_lyrics:
             print(query.artist_name)
             print(query.Song.title)
-            lc = LyricCrawler(query.artist_name,query.Song.title)
+            lc = LyricCrawler(query.artist_name, query.Song.title)
             try:
                 result = lc.run()
                 result.to_db(query.Song)
@@ -44,8 +45,9 @@ def run():
                 print(lc.url)
                 print(f"Fail crawl lyric: {query.Song.id}: {e}")
             time.sleep(3)
-        
-#%%
+
+# %%
+
 
 if __name__ == "__main__":
     run()
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     #     print('success!')
     # except IntegrityError:
     #     print('owned!')
-#%%
+# %%
 # artist = "ZAYN"
 # title = "I Don’t Wanna Live Forever (Fifty Shades Darker) - From Fifty Shades Darker (Original Motion Picture Soundtrack)"
 
